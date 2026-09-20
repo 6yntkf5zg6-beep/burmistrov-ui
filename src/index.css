@@ -1,0 +1,61 @@
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Urbanist", system-ui, sans-serif;
+
+  --color-primary: #23957a;
+  --color-primary-dark: #02381b;
+  --color-secondary: #266e5d;
+  --color-mint: #c8e4dd;
+  --color-cream: #fef7d1;
+  --color-coral: #ef665b;
+  /* Тренировка идёт прямо сейчас. Зелень яркая и насыщенная: это единственное состояние
+     календаря, которое происходит в эту минуту, и оно должно выхватываться взглядом.
+     Светлее не уводим — бледный оттенок сливается с mint сегодняшнего дня. */
+  --color-lime: #5fd08a;
+  /* Метка «клиент что-то написал»: жёлтый, на котором тёмный текст читается. */
+  --color-amber: #f0b429;
+  --color-ink: #3f3f3f;
+  --color-line: #e6e5e5;
+  --color-offwhite: #f6f6f6;
+
+  --radius-card: 30px;
+  --shadow-card: 0 40px 40px -20px rgba(0, 0, 0, 0.15);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: #fff;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/**
+ * Safari на iOS приближает страницу, когда фокус попадает в поле со шрифтом мельче 16px.
+ * Поля у нас набраны четырнадцатым, отсюда и рывок при каждом касании.
+ *
+ * Лечится размером шрифта, а не запретом масштабирования: `maximum-scale=1` в мета-теге
+ * убрал бы и зум пальцами, а он нужен людям, которые плохо видят.
+ *
+ * Правило намеренно вне слоёв: в Tailwind утилиты живут в @layer utilities, а всё, что
+ * написано вне слоёв, перебивает их независимо от специфичности. Иначе `text-sm` на поле
+ * оказался бы сильнее. Начиная с sm поля возвращаются к своему размеру: там зума нет.
+ */
+@media (max-width: 639px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
