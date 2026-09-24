@@ -1,10 +1,17 @@
 <!doctype html>
-<html lang="en">
+<!-- Язык страницы — русский. Значение по умолчанию от шаблона Vite было "en", и браузер
+     считал русскую страницу английской: предлагал перевод, а у кого перевод включён
+     постоянно — молча переводил. Получалась каша вроде «1 абсолютный» вместо «1 октября». -->
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>burmistrov-ui</title>
+    <!-- Интерфейс только на русском, переводить его не нужно. Встроенный переводчик
+         не просто портит слова: он подменяет текстовые узлы в DOM, а React потом
+         пытается обновить те же узлы и падает с ошибкой removeChild. -->
+    <meta name="google" content="notranslate" />
+    <title>СТАН — спортивно-оздоровительная технология атлетической направленности</title>
   </head>
   <body>
     <div id="root"></div>
