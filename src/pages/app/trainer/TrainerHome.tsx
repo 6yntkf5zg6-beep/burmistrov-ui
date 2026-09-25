@@ -157,28 +157,41 @@ export function TrainerHome() {
         </p>
 
         {inviteFormOpen && (
-          <form onSubmit={createInvite} className="mt-4 flex flex-wrap items-center gap-3">
-            {/* Поле необязательное: пустая пометка — обычное дело, если ссылку отправляют сразу. */}
+          // На телефоне поле занимает свою строку, кнопки — следующую: втроём в один ряд
+          // они не помещались и переносились вразнобой. От sm и шире всё встаёт в строку.
+          <form onSubmit={createInvite} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Поле необязательное: пустая пометка — обычное дело, если ссылку отправляют сразу.
+                Подсказка короткая: длинная обрезалась на середине слова на узком экране,
+                а чем пометка полезна, сказано в описании блока выше. */}
             <input
-              placeholder="Для кого — например «Пётр, вторник» (необязательно)"
+              placeholder="Для кого (необязательно)"
               maxLength={100}
               value={inviteLabel}
               onChange={(e) => setInviteLabel(e.target.value)}
-              className="min-w-0 flex-1 rounded-full border border-line bg-offwhite px-4 py-2.5 text-sm outline-none focus:border-primary"
+              className="min-w-0 rounded-full border border-line bg-offwhite px-4 py-2.5 text-sm outline-none focus:border-primary sm:flex-1"
             />
-            <Button type="submit" disabled={creatingInvite} className="!px-5 !py-2.5 !text-xs shrink-0">
-              {creatingInvite ? "Создаём..." : "Создать ссылку"}
-            </Button>
-            <button
-              type="button"
-              onClick={() => {
-                setInviteFormOpen(false);
-                setInviteLabel("");
-              }}
-              className="shrink-0 text-xs font-bold uppercase text-ink/50 hover:text-ink"
-            >
-              Отмена
-            </button>
+            {/* Обёртка нужна только на телефоне — она держит кнопки в одной строке.
+                От sm и шире display: contents убирает её из потока, и обе кнопки
+                становятся соседями поля, как было раньше. */}
+            <div className="flex gap-3 sm:contents">
+              <Button
+                type="submit"
+                disabled={creatingInvite}
+                className="!px-5 !py-2.5 !text-xs max-sm:flex-1 sm:shrink-0"
+              >
+                {creatingInvite ? "Создаём..." : <CompactLabel short="Создать" full="Создать ссылку" />}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInviteFormOpen(false);
+                  setInviteLabel("");
+                }}
+                className="rounded-full text-xs font-bold uppercase text-ink/50 transition hover:text-ink max-sm:flex-1 max-sm:border max-sm:border-line max-sm:py-2.5 sm:shrink-0"
+              >
+                Отмена
+              </button>
+            </div>
           </form>
         )}
 
