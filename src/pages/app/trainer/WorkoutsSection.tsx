@@ -7,6 +7,7 @@ import { ActionsMenu } from "../../../components/ActionsMenu";
 import { PreviewList } from "../../../components/PreviewList";
 import { Button } from "../../../components/Button";
 import { CompactLabel } from "../../../components/CompactLabel";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { WorkoutFormModal, type WorkoutFormState } from "./WorkoutFormModal";
 
 const emptyForm: WorkoutFormState = { name: "", description: "" };
@@ -15,6 +16,9 @@ export function WorkoutsSection() {
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const [confirmingDelete, setConfirmingDelete] = useState<WorkoutResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<WorkoutFormState>(emptyForm);
@@ -74,14 +78,18 @@ export function WorkoutsSection() {
     }
   }
 
+  /** Вызывается уже после подтверждения — само окно живёт в состоянии рядом. */
   async function removeWorkout(workout: WorkoutResponse) {
-    if (!window.confirm(`Удалить тренировку «${workout.name}»?`)) return;
+    setDeleting(true);
     setError(null);
     try {
       await workoutApi.remove(workout.id);
       setWorkouts((prev) => prev.filter((w) => w.id !== workout.id));
     } catch (err) {
       setError(apiErrorMessage(err, "Не удалось удалить тренировку"));
+    } finally {
+      setDeleting(false);
+      setConfirmingDelete(null);
     }
   }
 
@@ -131,7 +139,7 @@ export function WorkoutsSection() {
                 <ActionsMenu
                   actions={[
                     { label: "Изменить", onClick: () => startEdit(w) },
-                    { label: "Удалить", onClick: () => removeWorkout(w), danger: true },
+                    { label: "Удалить", onClick: () => setConfirmingDelete(w), danger: true },
                   ]}
                 />
               </div>
@@ -163,6 +171,16 @@ export function WorkoutsSection() {
           error={error}
           onSubmit={saveEdit}
           onClose={() => setEditingId(null)}
+        />
+      )}
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Удалить тренировку?"
+          description={`«${confirmingDelete.name}» будет удалена вместе со списком упражнений в ней.`}
+          busy={deleting}
+          onConfirm={() => removeWorkout(confirmingDelete)}
+          onCancel={() => setConfirmingDelete(null)}
         />
       )}
     </div>

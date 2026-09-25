@@ -13,6 +13,7 @@ import { useSortable } from "../../../hooks/useSortable";
 import { DUPLICATE_EXERCISE_MESSAGE } from "./exerciseName";
 import { Button } from "../../../components/Button";
 import { CompactLabel } from "../../../components/CompactLabel";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import {
   emptyWorkoutExerciseForm,
   WorkoutExerciseFormModal,
@@ -126,14 +127,21 @@ export function TrainerWorkoutDetail() {
     }
   }
 
+  const [confirmingExercise, setConfirmingExercise] = useState<WorkoutExerciseResponse | null>(null);
+  const [removingExercise, setRemovingExercise] = useState(false);
+
+  /** Вызывается уже после подтверждения — само окно живёт в состоянии рядом. */
   async function removeExercise(we: WorkoutExerciseResponse) {
-    if (!window.confirm(`Убрать «${we.exerciseName}» из тренировки?`)) return;
+    setRemovingExercise(true);
     setError(null);
     try {
       await workoutExerciseApi.remove(id, we.id);
       setExercises((prev) => prev.filter((x) => x.id !== we.id));
     } catch (err) {
       setError(apiErrorMessage(err, "Не удалось убрать упражнение"));
+    } finally {
+      setRemovingExercise(false);
+      setConfirmingExercise(null);
     }
   }
 
@@ -227,7 +235,7 @@ export function TrainerWorkoutDetail() {
                   <ActionsMenu
                     actions={[
                       { label: "Изменить", onClick: () => startEditExercise(we) },
-                      { label: "Удалить", onClick: () => removeExercise(we), danger: true },
+                      { label: "Удалить", onClick: () => setConfirmingExercise(we), danger: true },
                     ]}
                   />
                 </div>
@@ -264,6 +272,17 @@ export function TrainerWorkoutDetail() {
           onUploadError={setError}
           onSubmit={saveExercise}
           onClose={() => setEditingExerciseId(null)}
+        />
+      )}
+
+      {confirmingExercise && (
+        <ConfirmDialog
+          title="Убрать упражнение?"
+          description={`«${confirmingExercise.exerciseName}» пропадёт из этой тренировки. В каталоге упражнение останется.`}
+          confirmLabel="Убрать"
+          busy={removingExercise}
+          onConfirm={() => removeExercise(confirmingExercise)}
+          onCancel={() => setConfirmingExercise(null)}
         />
       )}
     </div>

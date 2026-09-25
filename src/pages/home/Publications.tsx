@@ -5,6 +5,7 @@ import { apiErrorMessage } from "../../api/http";
 import type { MoveDirection, PublicationResponse } from "../../api/types";
 import { DetailModal } from "../../components/DetailModal";
 import { OrderControls } from "../../components/OrderControls";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useSiteEditing } from "./siteEditing";
 
 function FileIcon() {
@@ -147,6 +148,7 @@ export function PublicationList({
   const [open, setOpen] = useState<PublicationResponse | null>(null);
   const [edited, setEdited] = useState<PublicationResponse | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState<PublicationResponse | null>(null);
 
   async function move(id: number, direction: MoveDirection) {
     setBusy(true);
@@ -157,14 +159,15 @@ export function PublicationList({
     }
   }
 
+  /** Вызывается уже после подтверждения — само окно живёт в состоянии рядом. */
   async function remove(publication: PublicationResponse) {
-    if (!window.confirm("Удалить публикацию?")) return;
     setBusy(true);
     try {
       await siteContentApi.deletePublication(publication.id);
       onChanged(await siteContentApi.listPublications());
     } finally {
       setBusy(false);
+      setConfirmingDelete(null);
     }
   }
 
@@ -186,7 +189,7 @@ export function PublicationList({
                   onUp={() => void move(pub.id, "UP")}
                   onDown={() => void move(pub.id, "DOWN")}
                   onEdit={() => setEdited(pub)}
-                  onDelete={() => void remove(pub)}
+                  onDelete={() => setConfirmingDelete(pub)}
                 />
               </div>
             )}
@@ -210,6 +213,16 @@ export function PublicationList({
             await siteContentApi.updatePublication(edited.id, draft);
             onChanged(await siteContentApi.listPublications());
           }}
+        />
+      )}
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Удалить публикацию?"
+          description={`«${confirmingDelete.title}» пропадёт со страницы.`}
+          busy={busy}
+          onConfirm={() => void remove(confirmingDelete)}
+          onCancel={() => setConfirmingDelete(null)}
         />
       )}
     </>

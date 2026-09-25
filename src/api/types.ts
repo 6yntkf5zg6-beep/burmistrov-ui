@@ -8,6 +8,8 @@ export type TrainerClientStatus = "PENDING" | "ACTIVE" | "ARCHIVED";
 // ---- auth ----
 
 export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   phone?: string;
@@ -156,16 +158,15 @@ export interface ErrorResponse {
 // ---- client invites (referral links) ----
 
 export interface CreateInviteRequest {
-  firstName: string;
-  lastName: string;
+  /** Пометка «для кого» — только для тренера, клиенту не показывается. */
+  label?: string;
 }
 
 export interface InviteResponse {
   id: number;
   token: string;
   registrationUrl: string;
-  firstName: string;
-  lastName: string;
+  label?: string;
   createdAt: string;
   expiresAt: string;
 }
@@ -173,8 +174,6 @@ export interface InviteResponse {
 export interface InviteCheckResponse {
   valid: boolean;
   trainerName?: string;
-  firstName?: string;
-  lastName?: string;
 }
 
 // ---- training programs ----

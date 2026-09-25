@@ -7,6 +7,7 @@ import { ActionsMenu } from "../../../components/ActionsMenu";
 import { PreviewList } from "../../../components/PreviewList";
 import { Button } from "../../../components/Button";
 import { CompactLabel } from "../../../components/CompactLabel";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { TrainingProgramFormModal, type TrainingProgramFormState } from "./TrainingProgramFormModal";
 
 const emptyForm: TrainingProgramFormState = { name: "", description: "" };
@@ -20,6 +21,9 @@ export function TrainingProgramsSection() {
   const navigate = useNavigate();
   const [programs, setPrograms] = useState<TrainingProgramResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const [confirmingDelete, setConfirmingDelete] = useState<TrainingProgramResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<TrainingProgramFormState>(emptyForm);
@@ -79,14 +83,18 @@ export function TrainingProgramsSection() {
     }
   }
 
+  /** Вызывается уже после подтверждения — само окно живёт в состоянии рядом. */
   async function removeProgram(program: TrainingProgramResponse) {
-    if (!window.confirm(`Удалить комплекс «${program.name}» вместе со всеми его тренировками?`)) return;
+    setDeleting(true);
     setError(null);
     try {
       await trainingProgramApi.remove(program.id);
       setPrograms((prev) => prev.filter((p) => p.id !== program.id));
     } catch (err) {
       setError(apiErrorMessage(err, "Не удалось удалить комплекс"));
+    } finally {
+      setDeleting(false);
+      setConfirmingDelete(null);
     }
   }
 
@@ -136,7 +144,7 @@ export function TrainingProgramsSection() {
                 <ActionsMenu
                   actions={[
                     { label: "Изменить", onClick: () => startEdit(p) },
-                    { label: "Удалить", onClick: () => removeProgram(p), danger: true },
+                    { label: "Удалить", onClick: () => setConfirmingDelete(p), danger: true },
                   ]}
                 />
               </div>
@@ -168,6 +176,16 @@ export function TrainingProgramsSection() {
           error={error}
           onSubmit={saveEdit}
           onClose={() => setEditingId(null)}
+        />
+      )}
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Удалить комплекс?"
+          description={`«${confirmingDelete.name}» будет удалён вместе со всеми тренировками внутри него.`}
+          busy={deleting}
+          onConfirm={() => removeProgram(confirmingDelete)}
+          onCancel={() => setConfirmingDelete(null)}
         />
       )}
     </div>

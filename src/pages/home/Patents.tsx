@@ -4,6 +4,7 @@ import { apiErrorMessage } from "../../api/http";
 import type { MoveDirection, PatentResponse } from "../../api/types";
 import { DetailModal } from "../../components/DetailModal";
 import { OrderControls } from "../../components/OrderControls";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { useSiteEditing } from "./siteEditing";
 
 /** Пока скана нет — показываем бланк с номером, а не пустое место. */
@@ -130,6 +131,7 @@ export function Patents() {
   const [patents, setPatents] = useState<PatentResponse[]>([]);
   const [form, setForm] = useState<{ mode: "create" } | { mode: "edit"; patent: PatentResponse } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState<PatentResponse | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -145,14 +147,15 @@ export function Patents() {
     }
   }
 
+  /** Вызывается уже после подтверждения — само окно живёт в состоянии рядом. */
   async function remove(patent: PatentResponse) {
-    if (!window.confirm("Удалить патент?")) return;
     setBusy(true);
     try {
       await siteContentApi.deletePatent(patent.id);
       setPatents(await siteContentApi.listPatents());
     } finally {
       setBusy(false);
+      setConfirmingDelete(null);
     }
   }
 
@@ -200,7 +203,7 @@ export function Patents() {
                       onUp={() => void move(patent.id, "UP")}
                       onDown={() => void move(patent.id, "DOWN")}
                       onEdit={() => setForm({ mode: "edit", patent })}
-                      onDelete={() => void remove(patent)}
+                      onDelete={() => setConfirmingDelete(patent)}
                     />
                   </div>
                 )}
@@ -240,6 +243,16 @@ export function Patents() {
             await siteContentApi.updatePatent(form.patent.id, { scanUrl });
             setPatents(await siteContentApi.listPatents());
           }}
+        />
+      )}
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Удалить патент?"
+          description={`«${confirmingDelete.title}» пропадёт со страницы вместе с прикреплённым сканом.`}
+          busy={busy}
+          onConfirm={() => void remove(confirmingDelete)}
+          onCancel={() => setConfirmingDelete(null)}
         />
       )}
     </section>

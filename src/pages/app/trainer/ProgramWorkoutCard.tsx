@@ -12,6 +12,7 @@ import { DUPLICATE_EXERCISE_MESSAGE } from "./exerciseName";
 import { useSortable, type SortableHandleProps } from "../../../hooks/useSortable";
 import { Button } from "../../../components/Button";
 import { CompactLabel } from "../../../components/CompactLabel";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import {
   emptyWorkoutExerciseForm,
   WorkoutExerciseFormModal,
@@ -124,14 +125,23 @@ export function ProgramWorkoutCard({
     }
   }
 
+  // Две разные операции — два отдельных состояния: одна удаляет тренировку целиком,
+  // другая лишь вынимает из неё упражнение.
+  const [confirmingWorkout, setConfirmingWorkout] = useState(false);
+  const [confirmingExercise, setConfirmingExercise] = useState<WorkoutExerciseResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   async function removeWorkout() {
-    if (!window.confirm(`Удалить тренировку «${workout.name}» вместе со всеми упражнениями в ней?`)) return;
+    setDeleting(true);
     setError(null);
     try {
       await programWorkoutApi.remove(programId, workout.id);
       onDeleted(workout.id);
     } catch (err) {
       setError(apiErrorMessage(err, "Не удалось удалить тренировку"));
+    } finally {
+      setDeleting(false);
+      setConfirmingWorkout(false);
     }
   }
 
@@ -210,13 +220,16 @@ export function ProgramWorkoutCard({
   }
 
   async function removeExercise(we: WorkoutExerciseResponse) {
-    if (!window.confirm(`Убрать «${we.exerciseName}» из тренировки?`)) return;
+    setDeleting(true);
     setError(null);
     try {
       await workoutExerciseApi.remove(workout.id, we.id);
       setExercises((prev) => (prev ?? []).filter((x) => x.id !== we.id));
     } catch (err) {
       setError(apiErrorMessage(err, "Не удалось убрать упражнение"));
+    } finally {
+      setDeleting(false);
+      setConfirmingExercise(null);
     }
   }
 
@@ -273,7 +286,7 @@ export function ProgramWorkoutCard({
           <ActionsMenu
             actions={[
               { label: "Изменить", onClick: () => setEditingWorkout(true) },
-              { label: "Удалить", onClick: removeWorkout, danger: true },
+              { label: "Удалить", onClick: () => setConfirmingWorkout(true), danger: true },
             ]}
           />
         </div>
@@ -334,7 +347,7 @@ export function ProgramWorkoutCard({
                     <ActionsMenu
                       actions={[
                         { label: "Изменить", onClick: () => startEditExercise(we) },
-                        { label: "Удалить", onClick: () => removeExercise(we), danger: true },
+                        { label: "Удалить", onClick: () => setConfirmingExercise(we), danger: true },
                       ]}
                     />
                   </div>
@@ -372,6 +385,27 @@ export function ProgramWorkoutCard({
           onUploadError={setError}
           onSubmit={saveExercise}
           onClose={() => setEditingExerciseId(null)}
+        />
+      )}
+
+      {confirmingWorkout && (
+        <ConfirmDialog
+          title="Удалить тренировку?"
+          description={`«${workout.name}» будет удалена из комплекса вместе со всеми упражнениями в ней.`}
+          busy={deleting}
+          onConfirm={removeWorkout}
+          onCancel={() => setConfirmingWorkout(false)}
+        />
+      )}
+
+      {confirmingExercise && (
+        <ConfirmDialog
+          title="Убрать упражнение?"
+          description={`«${confirmingExercise.exerciseName}» пропадёт из этой тренировки. В каталоге упражнение останется.`}
+          confirmLabel="Убрать"
+          busy={deleting}
+          onConfirm={() => removeExercise(confirmingExercise)}
+          onCancel={() => setConfirmingExercise(null)}
         />
       )}
     </div>

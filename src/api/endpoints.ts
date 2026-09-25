@@ -92,6 +92,7 @@ export const inviteApi = {
   create: (body: CreateInviteRequest) => http.post<InviteResponse>("/invites", body).then((r) => r.data),
   list: () => http.get<InviteResponse[]>("/invites").then((r) => r.data),
   check: (token: string) => http.get<InviteCheckResponse>(`/invites/check/${token}`).then((r) => r.data),
+  remove: (id: number) => http.delete<void>(`/invites/${id}`).then((r) => r.data),
 };
 
 // /api/training-programs
